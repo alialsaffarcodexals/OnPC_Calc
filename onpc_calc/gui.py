@@ -7,7 +7,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 
 from .database import Database
-from .tracker import Tracker
+from .tracker import Tracker, PcTracker
 
 FONT = ("Arial", 16)
 BG = "#222222"
@@ -26,6 +26,7 @@ class GUI:
     def __init__(self) -> None:
         self.db = Database()
         self.tracker: Tracker | None = None
+        self.pc_tracker: PcTracker | None = None
         self.paths: list[str] = []
         self.root = tk.Tk()
         self.root.title("OnPC Calc")
@@ -58,6 +59,16 @@ class GUI:
             highlightbackground=BG,
         )
         self.listbox.pack(pady=10)
+
+        pc_btn = tk.Button(
+            self.root,
+            text="PC Time",
+            font=FONT,
+            bg=BTN_BG,
+            fg=BTN_FG,
+            command=self._toggle_pc_tracking,
+        )
+        pc_btn.pack(pady=10)
 
         start_btn = tk.Button(
             self.root,
@@ -103,6 +114,16 @@ class GUI:
             self.tracker.start()
             self.start_btn.config(text="Stop Track")
 
+    def _toggle_pc_tracking(self) -> None:
+        if self.pc_tracker and self.pc_tracker.running:
+            seconds = self.pc_tracker.stop()
+            self.db.add_pc_usage(self.pc_tracker.date, seconds)
+            messagebox.showinfo("Saved", "PC time saved.")
+            self.pc_tracker = None
+        else:
+            self.pc_tracker = PcTracker()
+            self.pc_tracker.start()
+
     def _show_data(self) -> None:
         window = tk.Toplevel(self.root)
         window.title("Show Data")
@@ -117,8 +138,10 @@ class GUI:
         def load_data() -> None:
             date = date_var.get()
             text.delete("1.0", tk.END)
+            pc_total = self.db.get_pc_usage(date)
+            text.insert(tk.END, f"PC Total: {format_time(pc_total)}\n")
             total = self.db.get_total_for_date(date)
-            text.insert(tk.END, f"Total: {format_time(total)}\n")
+            text.insert(tk.END, f"Tracked Programs: {format_time(total)}\n")
             for name, sec in self.db.get_usage_for_date(date):
                 text.insert(tk.END, f"{name:20} {format_time(sec)}\n")
 
