@@ -278,7 +278,7 @@ class GUI:
 
         sum_btn = tk.Button(btn_frame, text="Sum Apps", font=FONT, bg=BTN_BG, fg=BTN_FG, command=total_programs)
         sum_btn.pack(side=tk.LEFT, padx=5)
-        reset_btn = tk.Button(btn_frame, text="Reset Date", font=FONT, bg=BTN_BG, fg=BTN_FG, command=reset_date)
+        reset_btn = tk.Button(btn_frame, text="Reset Data", font=FONT, bg=BTN_BG, fg=BTN_FG, command=reset_date)
         reset_btn.pack(side=tk.LEFT, padx=5)
         back_btn = tk.Button(btn_frame, text="Return to Main Menu", font=FONT, bg=BTN_BG, fg=BTN_FG, command=self._show_main_menu)
         back_btn.pack(side=tk.LEFT, padx=5)
