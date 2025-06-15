@@ -12,6 +12,7 @@ simple controls for starting and stopping timers.
 - Times are shown in `HH:MM:SS` format.
 - View tracked data for any day in a table.
 - Calculate total app usage for the day with **Sum Apps**.
+- Clear all records for a specific date using **Reset Date**.
 - Save displayed data using the **Print Track** button which writes to
   `PC-Track-YYYY-MM-DD.txt`.
 - Dark themed interface with a larger window and improved layout.
@@ -28,4 +29,5 @@ python main.py
 Use **Track PC** to measure total PC time or **Track App** to monitor a single
 application by path. A live timer shows progress while tracking. In the
 **Show Data** view you can review totals for any day, calculate the sum of all
-app usage, and press **Print Track** to save the table to a text file.
+app usage, press **Reset Date** to clear a day's records, and use **Print Track**
+to save the table to a text file.
