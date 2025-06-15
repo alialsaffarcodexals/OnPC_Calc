@@ -11,6 +11,7 @@ OnPcCalc is a program that calculates how much time the user spends in selected 
 - Print the displayed data.
 - Dark themed interface with larger window.
 - Times are shown in HH:MM format.
+- Track overall PC usage time with a dedicated button.
 
 ## Usage
 
@@ -20,3 +21,5 @@ Install the requirements and run `main.py`:
 pip install -r requirements.txt
 python main.py
 ```
+
+Use the **PC Time** button to record your total computer usage, regardless of the tracked applications.
