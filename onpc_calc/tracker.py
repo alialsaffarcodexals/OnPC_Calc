@@ -9,19 +9,26 @@ from typing import Dict
 import psutil
 
 class Tracker:
-    """Track time spent in running processes."""
+    """Track time spent in selected processes."""
 
-    def __init__(self) -> None:
+    def __init__(self, paths: list[str] | None = None) -> None:
         self.running = False
         self.data: Dict[str, int] = defaultdict(int)
         self.total_seconds = 0
         self.thread: threading.Thread | None = None
         self.date = datetime.now().date().isoformat()
+        self.paths = set(paths or [])
 
     def _run(self) -> None:
         while self.running:
-            for proc in psutil.process_iter(['name']):
-                name = proc.info.get('name') or 'Unknown'
+            for proc in psutil.process_iter(['name', 'exe']):
+                try:
+                    exe = proc.info.get('exe') or ""
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
+                if exe not in self.paths:
+                    continue
+                name = proc.info.get('name') or exe or 'Unknown'
                 self.data[name] += 1
             self.total_seconds += 1
             time.sleep(1)
