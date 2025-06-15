@@ -1,4 +1,4 @@
-"""Entry point for OnPC_Calc."""
+"""Entry point for App Tracker."""
 
 from onpc_calc.gui import GUI
 

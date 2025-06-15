@@ -1,4 +1,4 @@
-"""OnPC_Calc package."""
+"""App Tracker package."""
 
 __all__ = ["database", "tracker", "gui"]
 

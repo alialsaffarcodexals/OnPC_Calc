@@ -1,9 +1,9 @@
 """Process usage tracker."""
 
+import os
 import threading
 import time
 from datetime import datetime
-from typing import Iterable
 
 import psutil
 
@@ -39,22 +39,23 @@ class PcTracker:
 
 
 class ProgramTracker:
-    """Tracks usage of a specific running process."""
+    """Tracks usage of a specific program given its executable path."""
 
-    def __init__(self, name: str) -> None:
-        self.name = name
+    def __init__(self, path: str) -> None:
+        self.path = os.path.abspath(path)
         self.running = False
         self.seconds = 0
         self.thread: threading.Thread | None = None
         self.date = datetime.now().date().isoformat()
 
     def _is_running(self) -> bool:
-        """Return True if a process with matching name is running."""
-        for proc in psutil.process_iter(["name"]):
+        """Return True if a process with matching executable path is running."""
+        for proc in psutil.process_iter(["exe"]):
             try:
-                if proc.info["name"] and proc.info["name"].lower() == self.name.lower():
+                exe = proc.info.get("exe")
+                if exe and os.path.abspath(exe) == self.path:
                     return True
-            except psutil.Error:
+            except (psutil.Error, OSError):
                 continue
         return False
 

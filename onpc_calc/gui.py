@@ -1,9 +1,10 @@
-"""Tkinter GUI for OnPC_Calc."""
+"""Tkinter GUI for App Tracker."""
 
 from __future__ import annotations
 
+import os
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 
 from .database import Database
 from .tracker import PcTracker, ProgramTracker
@@ -30,7 +31,7 @@ class GUI:
     def __init__(self) -> None:
         self.db = Database()
         self.root = tk.Tk()
-        self.root.title("OnPC Calc")
+        self.root.title("App Tracker")
         self.root.geometry(WINDOW_SIZE)
         self.root.configure(bg=BG)
         self.current_frame: tk.Frame | None = None
@@ -73,7 +74,7 @@ class GUI:
 
         prog_btn = tk.Button(
             frame,
-            text="Track Program",
+            text="Track App",
             font=FONT,
             bg=BTN_BG,
             fg=BTN_FG,
@@ -143,10 +144,21 @@ class GUI:
         self._clear_frame()
         frame = self.current_frame
 
-        name_var = tk.StringVar()
-        entry = tk.Entry(frame, textvariable=name_var, font=FONT)
+        header = tk.Label(frame, text="App Tracker", font=FONT, bg=BG, fg=FG)
+        header.pack(pady=10)
+
+        path_var = tk.StringVar()
+        entry = tk.Entry(frame, textvariable=path_var, font=FONT, width=50)
         entry.pack(pady=10)
-        entry.insert(0, "program name")
+        entry.insert(0, "app path")
+
+        def browse() -> None:
+            path = filedialog.askopenfilename()
+            if path:
+                path_var.set(path)
+
+        browse_btn = tk.Button(frame, text="Browse", font=FONT, bg=BTN_BG, fg=BTN_FG, command=browse)
+        browse_btn.pack(pady=5)
 
         label = tk.Label(frame, textvariable=self.timer_var, font=FONT, bg=BG, fg=FG)
         label.pack(pady=10)
@@ -156,22 +168,22 @@ class GUI:
 
         def toggle() -> None:
             nonlocal start_btn
-            name = name_var.get().strip()
-            if not name:
-                messagebox.showerror("Error", "Program name required")
+            path = path_var.get().strip()
+            if not path:
+                messagebox.showerror("Error", "App path required")
                 return
             if self.prog_tracker and self.prog_tracker.running:
                 secs = self.prog_tracker.stop()
-                self.db.add_program_usage(name, self.prog_tracker.date, secs)
-                messagebox.showinfo("Saved", f"{name} time saved")
+                self.db.add_program_usage(path, self.prog_tracker.date, secs)
+                messagebox.showinfo("Saved", f"{os.path.basename(path)} time saved")
                 self.prog_tracker = None
                 start_btn.config(text="Start")
             else:
-                self.prog_tracker = ProgramTracker(name)
+                self.prog_tracker = ProgramTracker(path)
                 self.timer_var.set("00:00:00")
                 self.prog_tracker.start()
                 self._update_timer()
-                messagebox.showinfo("Started", f"{name} tracker started!")
+                messagebox.showinfo("Started", f"{os.path.basename(path)} tracker started!")
                 start_btn.config(text="Stop")
 
         start_btn.config(command=toggle)
@@ -211,7 +223,7 @@ class GUI:
             pc_total = self.db.get_pc_usage(date)
             tree.insert("", tk.END, values=("PC Total", format_time(pc_total)))
             for name, secs in self.db.get_program_usage(date):
-                tree.insert("", tk.END, values=(name, format_time(secs)))
+                tree.insert("", tk.END, values=(os.path.basename(name), format_time(secs)))
 
         def save() -> None:
             date = date_var.get()
@@ -225,7 +237,7 @@ class GUI:
                     pc_total = self.db.get_pc_usage(date)
                     f.write(f"PC Total\t{format_time(pc_total)}\n")
                     for name, secs in self.db.get_program_usage(date):
-                        f.write(f"{name}\t{format_time(secs)}\n")
+                        f.write(f"{os.path.basename(name)}\t{format_time(secs)}\n")
                 messagebox.showinfo("Saved", f"Data saved to {filename}")
             except OSError as exc:
                 messagebox.showerror("Error", str(exc))
@@ -236,6 +248,16 @@ class GUI:
         show_btn.pack(side=tk.LEFT, padx=5)
         print_btn = tk.Button(btn_frame, text="Print Track", font=FONT, bg=BTN_BG, fg=BTN_FG, command=save)
         print_btn.pack(side=tk.LEFT, padx=5)
+        def total_programs() -> None:
+            date = date_var.get()
+            if not date:
+                messagebox.showerror("Error", "No date selected")
+                return
+            total = sum(secs for _, secs in self.db.get_program_usage(date))
+            messagebox.showinfo("Total App Time", f"Total app usage: {format_time(total)}")
+
+        sum_btn = tk.Button(btn_frame, text="Sum Apps", font=FONT, bg=BTN_BG, fg=BTN_FG, command=total_programs)
+        sum_btn.pack(side=tk.LEFT, padx=5)
         back_btn = tk.Button(btn_frame, text="Return to Main Menu", font=FONT, bg=BTN_BG, fg=BTN_FG, command=self._show_main_menu)
         back_btn.pack(side=tk.LEFT, padx=5)
 
