@@ -167,18 +167,23 @@ class GUI:
         def toggle() -> None:
             nonlocal start_btn
             name = name_var.get().strip()
-            if not name:
+            if not name and not self.prog_tracker:
                 messagebox.showerror("Error", "Program name required")
                 return
             if self.prog_tracker and self.prog_tracker.running:
                 secs = self.prog_tracker.stop()
-                self.db.add_program_usage(name, self.prog_tracker.date, secs)
-                messagebox.showinfo("Saved", f"{name} time saved")
+                self.db.add_program_usage(self.prog_tracker.name, self.prog_tracker.date, secs)
+                messagebox.showinfo("Saved", f"{self.prog_tracker.name} time saved")
                 self.prog_tracker = None
                 start_btn.config(text="Start")
+                header.config(text="App Tracker")
             else:
+                if not name:
+                    messagebox.showerror("Error", "Program name required")
+                    return
                 self.prog_tracker = ProgramTracker(name)
                 self.timer_var.set("00:00:00")
+                header.config(text=f"{name} Tracker")
                 self.prog_tracker.start()
                 self._update_timer()
                 messagebox.showinfo("Started", f"{name} tracker started!")
