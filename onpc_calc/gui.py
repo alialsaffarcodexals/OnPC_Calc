@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import os
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, messagebox
 
 from .database import Database
-from .tracker import Tracker, PcTracker
+from .tracker import PcTracker
 
 FONT = ("Arial", 16)
 BG = "#222222"
@@ -25,12 +24,10 @@ def format_time(seconds: int) -> str:
 class GUI:
     def __init__(self) -> None:
         self.db = Database()
-        self.tracker: Tracker | None = None
         self.pc_tracker: PcTracker | None = None
-        self.paths: list[str] = []
         self.root = tk.Tk()
         self.root.title("OnPC Calc")
-        self.root.geometry("600x400")
+        self.root.geometry("700x500")
         self.root.configure(bg=BG)
         self._build_main_menu()
 
@@ -38,81 +35,29 @@ class GUI:
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        add_btn = tk.Button(
-            self.root,
-            text="Add Program",
-            font=FONT,
-            bg=BTN_BG,
-            fg=BTN_FG,
-            command=self._add_program,
-        )
-        add_btn.pack(pady=10)
-
-        self.listbox = tk.Listbox(
-            self.root,
-            font=("Arial", 12),
-            height=5,
-            width=40,
-            bg=BG,
-            fg=FG,
-            selectbackground=BTN_BG,
-            highlightbackground=BG,
-        )
-        self.listbox.pack(pady=10)
+        frame = tk.Frame(self.root, bg=BG)
+        frame.pack(expand=True)
 
         pc_btn = tk.Button(
-            self.root,
-            text="PC Time",
+            frame,
+            text="Track PC",
             font=FONT,
             bg=BTN_BG,
             fg=BTN_FG,
             command=self._toggle_pc_tracking,
         )
-        pc_btn.pack(pady=10)
-
-        start_btn = tk.Button(
-            self.root,
-            text="Start Track",
-            font=FONT,
-            bg=BTN_BG,
-            fg=BTN_FG,
-            command=self._toggle_tracking,
-        )
-        start_btn.pack(pady=10)
+        pc_btn.pack(pady=20)
 
         show_btn = tk.Button(
-            self.root,
+            frame,
             text="Show Data",
             font=FONT,
             bg=BTN_BG,
             fg=BTN_FG,
             command=self._show_data,
         )
-        show_btn.pack(pady=10)
+        show_btn.pack(pady=20)
 
-        self.start_btn = start_btn
-
-    def _add_program(self) -> None:
-        path = filedialog.askopenfilename(title="Select Program")
-        if path and path not in self.paths:
-            self.paths.append(path)
-            self.listbox.insert(tk.END, os.path.basename(path))
-
-    def _toggle_tracking(self) -> None:
-        if self.tracker and self.tracker.running:
-            data = self.tracker.stop()
-            for name, sec in data.items():
-                self.db.add_usage(self.tracker.date, name, sec)
-            messagebox.showinfo("Saved", "Tracking data saved.")
-            self.start_btn.config(text="Start Track")
-            self.tracker = None
-        else:
-            if not self.paths:
-                messagebox.showwarning("No Programs", "Add at least one program to track.")
-                return
-            self.tracker = Tracker(self.paths)
-            self.tracker.start()
-            self.start_btn.config(text="Stop Track")
 
     def _toggle_pc_tracking(self) -> None:
         if self.pc_tracker and self.pc_tracker.running:
@@ -140,10 +85,6 @@ class GUI:
             text.delete("1.0", tk.END)
             pc_total = self.db.get_pc_usage(date)
             text.insert(tk.END, f"PC Total: {format_time(pc_total)}\n")
-            total = self.db.get_total_for_date(date)
-            text.insert(tk.END, f"Tracked Programs: {format_time(total)}\n")
-            for name, sec in self.db.get_usage_for_date(date):
-                text.insert(tk.END, f"{name:20} {format_time(sec)}\n")
 
         def print_data() -> None:
             print(text.get("1.0", tk.END))
