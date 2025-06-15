@@ -1,0 +1,4 @@
+App Name	Time Spent
+PC Total	00:00:00
+Fortnite	00:00:11
+RL	00:00:04
