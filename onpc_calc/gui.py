@@ -6,37 +6,60 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from .database import Database
-from .tracker import PcTracker
+from .tracker import PcTracker, ProgramTracker
 
 FONT = ("Arial", 16)
 BG = "#222222"
 FG = "#eeeeee"
 BTN_BG = "#444444"
 BTN_FG = "#ffffff"
+WINDOW_SIZE = "800x600"
 
 
 def format_time(seconds: int) -> str:
-    """Return HH:MM string for given seconds."""
+    """Return HH:MM:SS string for given seconds."""
     hours = seconds // 3600
     minutes = (seconds % 3600) // 60
-    return f"{hours:02d}:{minutes:02d}"
+    secs = seconds % 60
+    return f"{hours:02d}:{minutes:02d}:{secs:02d}"
+
 
 class GUI:
+    """Main application GUI."""
+
     def __init__(self) -> None:
         self.db = Database()
-        self.pc_tracker: PcTracker | None = None
         self.root = tk.Tk()
         self.root.title("OnPC Calc")
-        self.root.geometry("700x500")
+        self.root.geometry(WINDOW_SIZE)
         self.root.configure(bg=BG)
-        self._build_main_menu()
+        self.current_frame: tk.Frame | None = None
+        self.pc_tracker: PcTracker | None = None
+        self.prog_tracker: ProgramTracker | None = None
+        self.timer_var = tk.StringVar(value="00:00:00")
+        self._show_main_menu()
 
-    def _build_main_menu(self) -> None:
-        for widget in self.root.winfo_children():
-            widget.destroy()
+    # utility ---------------------------------------------------------------
+    def _clear_frame(self) -> None:
+        if self.current_frame:
+            self.current_frame.destroy()
+        self.current_frame = tk.Frame(self.root, bg=BG)
+        self.current_frame.pack(expand=True, fill="both")
 
-        frame = tk.Frame(self.root, bg=BG)
-        frame.pack(expand=True)
+    def _update_timer(self) -> None:
+        if self.pc_tracker and self.pc_tracker.running:
+            self.timer_var.set(format_time(self.pc_tracker.seconds))
+        elif self.prog_tracker and self.prog_tracker.running:
+            self.timer_var.set(format_time(self.prog_tracker.seconds))
+        if self.pc_tracker and self.pc_tracker.running or (
+            self.prog_tracker and self.prog_tracker.running
+        ):
+            self.root.after(1000, self._update_timer)
+
+    # main menu -------------------------------------------------------------
+    def _show_main_menu(self) -> None:
+        self._clear_frame()
+        frame = self.current_frame
 
         pc_btn = tk.Button(
             frame,
@@ -44,9 +67,19 @@ class GUI:
             font=FONT,
             bg=BTN_BG,
             fg=BTN_FG,
-            command=self._toggle_pc_tracking,
+            command=self._pc_view,
         )
         pc_btn.pack(pady=20)
+
+        prog_btn = tk.Button(
+            frame,
+            text="Track Program",
+            font=FONT,
+            bg=BTN_BG,
+            fg=BTN_FG,
+            command=self._program_view,
+        )
+        prog_btn.pack(pady=20)
 
         show_btn = tk.Button(
             frame,
@@ -54,49 +87,158 @@ class GUI:
             font=FONT,
             bg=BTN_BG,
             fg=BTN_FG,
-            command=self._show_data,
+            command=self._show_data_view,
         )
         show_btn.pack(pady=20)
 
+    # PC tracking -----------------------------------------------------------
+    def _pc_view(self) -> None:
+        self._clear_frame()
+        frame = self.current_frame
 
-    def _toggle_pc_tracking(self) -> None:
-        if self.pc_tracker and self.pc_tracker.running:
-            seconds = self.pc_tracker.stop()
-            self.db.add_pc_usage(self.pc_tracker.date, seconds)
-            messagebox.showinfo("Saved", "PC time saved.")
-            self.pc_tracker = None
-        else:
-            self.pc_tracker = PcTracker()
-            self.pc_tracker.start()
+        label = tk.Label(frame, text="PC Tracker", font=FONT, bg=BG, fg=FG)
+        label.pack(pady=10)
+        timer = tk.Label(frame, textvariable=self.timer_var, font=FONT, bg=BG, fg=FG)
+        timer.pack(pady=10)
 
-    def _show_data(self) -> None:
-        window = tk.Toplevel(self.root)
-        window.title("Show Data")
-        window.configure(bg=BG)
+        start_btn = tk.Button(
+            frame,
+            text="Start" if not self.pc_tracker else "Stop",
+            font=FONT,
+            bg=BTN_BG,
+            fg=BTN_FG,
+        )
+        start_btn.pack(pady=20)
+
+        def toggle() -> None:
+            nonlocal start_btn
+            if self.pc_tracker and self.pc_tracker.running:
+                secs = self.pc_tracker.stop()
+                self.db.add_pc_usage(self.pc_tracker.date, secs)
+                messagebox.showinfo("Saved", "PC time saved")
+                self.pc_tracker = None
+                start_btn.config(text="Start")
+            else:
+                self.pc_tracker = PcTracker()
+                self.timer_var.set("00:00:00")
+                self.pc_tracker.start()
+                self._update_timer()
+                messagebox.showinfo("Started", "PC tracking started!")
+                start_btn.config(text="Stop")
+
+        start_btn.config(command=toggle)
+
+        back_btn = tk.Button(
+            frame,
+            text="Return to Main Menu",
+            font=FONT,
+            bg=BTN_BG,
+            fg=BTN_FG,
+            command=self._show_main_menu,
+        )
+        back_btn.pack(pady=10)
+
+    # program tracking ------------------------------------------------------
+    def _program_view(self) -> None:
+        self._clear_frame()
+        frame = self.current_frame
+
+        name_var = tk.StringVar()
+        entry = tk.Entry(frame, textvariable=name_var, font=FONT)
+        entry.pack(pady=10)
+        entry.insert(0, "program name")
+
+        label = tk.Label(frame, textvariable=self.timer_var, font=FONT, bg=BG, fg=FG)
+        label.pack(pady=10)
+
+        start_btn = tk.Button(frame, text="Start", font=FONT, bg=BTN_BG, fg=BTN_FG)
+        start_btn.pack(pady=20)
+
+        def toggle() -> None:
+            nonlocal start_btn
+            name = name_var.get().strip()
+            if not name:
+                messagebox.showerror("Error", "Program name required")
+                return
+            if self.prog_tracker and self.prog_tracker.running:
+                secs = self.prog_tracker.stop()
+                self.db.add_program_usage(name, self.prog_tracker.date, secs)
+                messagebox.showinfo("Saved", f"{name} time saved")
+                self.prog_tracker = None
+                start_btn.config(text="Start")
+            else:
+                self.prog_tracker = ProgramTracker(name)
+                self.timer_var.set("00:00:00")
+                self.prog_tracker.start()
+                self._update_timer()
+                messagebox.showinfo("Started", f"{name} tracker started!")
+                start_btn.config(text="Stop")
+
+        start_btn.config(command=toggle)
+
+        back_btn = tk.Button(
+            frame,
+            text="Return to Main Menu",
+            font=FONT,
+            bg=BTN_BG,
+            fg=BTN_FG,
+            command=self._show_main_menu,
+        )
+        back_btn.pack(pady=10)
+
+    # show data -------------------------------------------------------------
+    def _show_data_view(self) -> None:
+        self._clear_frame()
+        frame = self.current_frame
+
         dates = self.db.list_dates()
         date_var = tk.StringVar(value=dates[0] if dates else "")
-        dropdown = ttk.Combobox(window, values=dates, textvariable=date_var, font=FONT)
+        dropdown = ttk.Combobox(frame, values=dates, textvariable=date_var, font=FONT)
         dropdown.pack(pady=10)
-        text = tk.Text(window, font=("Courier", 12), width=50, height=12, bg=BG, fg=FG)
-        text.pack()
 
-        def load_data() -> None:
+        tree = ttk.Treeview(frame, columns=("app", "time"), show="headings", height=10)
+        tree.heading("app", text="App Name")
+        tree.heading("time", text="Time Spent")
+        tree.column("app", width=200)
+        tree.column("time", width=150)
+        tree.pack(pady=10)
+
+        def load() -> None:
+            tree.delete(*tree.get_children())
             date = date_var.get()
-            text.delete("1.0", tk.END)
+            if not date:
+                return
             pc_total = self.db.get_pc_usage(date)
-            text.insert(tk.END, f"PC Total: {format_time(pc_total)}\n")
+            tree.insert("", tk.END, values=("PC Total", format_time(pc_total)))
+            for name, secs in self.db.get_program_usage(date):
+                tree.insert("", tk.END, values=(name, format_time(secs)))
 
-        def print_data() -> None:
-            print(text.get("1.0", tk.END))
+        def save() -> None:
+            date = date_var.get()
+            if not date:
+                messagebox.showerror("Error", "No date selected")
+                return
+            filename = f"PC-Track-{date}.txt"
+            try:
+                with open(filename, "w", encoding="utf-8") as f:
+                    f.write("App Name\tTime Spent\n")
+                    pc_total = self.db.get_pc_usage(date)
+                    f.write(f"PC Total\t{format_time(pc_total)}\n")
+                    for name, secs in self.db.get_program_usage(date):
+                        f.write(f"{name}\t{format_time(secs)}\n")
+                messagebox.showinfo("Saved", f"Data saved to {filename}")
+            except OSError as exc:
+                messagebox.showerror("Error", str(exc))
 
-        btn_frame = tk.Frame(window, bg=BG)
+        btn_frame = tk.Frame(frame, bg=BG)
         btn_frame.pack(pady=10)
-        show_btn = tk.Button(btn_frame, text="Show", font=FONT, bg=BTN_BG, fg=BTN_FG, command=load_data)
+        show_btn = tk.Button(btn_frame, text="Show", font=FONT, bg=BTN_BG, fg=BTN_FG, command=load)
         show_btn.pack(side=tk.LEFT, padx=5)
-        print_btn = tk.Button(btn_frame, text="Print Track", font=FONT, bg=BTN_BG, fg=BTN_FG, command=print_data)
+        print_btn = tk.Button(btn_frame, text="Print Track", font=FONT, bg=BTN_BG, fg=BTN_FG, command=save)
         print_btn.pack(side=tk.LEFT, padx=5)
-        back_btn = tk.Button(btn_frame, text="Back", font=FONT, bg=BTN_BG, fg=BTN_FG, command=window.destroy)
+        back_btn = tk.Button(btn_frame, text="Return to Main Menu", font=FONT, bg=BTN_BG, fg=BTN_FG, command=self._show_main_menu)
         back_btn.pack(side=tk.LEFT, padx=5)
 
+    # run -------------------------------------------------------------------
     def run(self) -> None:
         self.root.mainloop()
