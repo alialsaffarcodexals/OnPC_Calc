@@ -84,3 +84,10 @@ class Database:
             ") ORDER BY date DESC"
         )
         return [row[0] for row in cur.fetchall()]
+
+    def reset_date(self, date: str) -> None:
+        """Delete all usage records for the given date."""
+        cur = self.conn.cursor()
+        cur.execute("DELETE FROM pc_usage WHERE date=?", (date,))
+        cur.execute("DELETE FROM program_usage WHERE date=?", (date,))
+        self.conn.commit()

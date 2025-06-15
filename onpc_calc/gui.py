@@ -99,8 +99,14 @@ class GUI:
 
         label = tk.Label(frame, text="PC Tracker", font=FONT, bg=BG, fg=FG)
         label.pack(pady=10)
+        if self.pc_tracker:
+            self.timer_var.set(format_time(self.pc_tracker.seconds))
+        else:
+            self.timer_var.set("00:00:00")
         timer = tk.Label(frame, textvariable=self.timer_var, font=FONT, bg=BG, fg=FG)
         timer.pack(pady=10)
+        if self.pc_tracker and self.pc_tracker.running:
+            self._update_timer()
 
         start_btn = tk.Button(
             frame,
@@ -256,8 +262,24 @@ class GUI:
             total = sum(secs for _, secs in self.db.get_program_usage(date))
             messagebox.showinfo("Total App Time", f"Total app usage: {format_time(total)}")
 
+        def reset_date() -> None:
+            date = date_var.get()
+            if not date:
+                messagebox.showerror("Error", "No date selected")
+                return
+            if not messagebox.askyesno("Confirm", f"Clear data for {date}?"):
+                return
+            self.db.reset_date(date)
+            load()
+            dates = self.db.list_dates()
+            dropdown["values"] = dates
+            date_var.set(dates[0] if dates else "")
+            messagebox.showinfo("Reset", f"Data for {date} cleared")
+
         sum_btn = tk.Button(btn_frame, text="Sum Apps", font=FONT, bg=BTN_BG, fg=BTN_FG, command=total_programs)
         sum_btn.pack(side=tk.LEFT, padx=5)
+        reset_btn = tk.Button(btn_frame, text="Reset Date", font=FONT, bg=BTN_BG, fg=BTN_FG, command=reset_date)
+        reset_btn.pack(side=tk.LEFT, padx=5)
         back_btn = tk.Button(btn_frame, text="Return to Main Menu", font=FONT, bg=BTN_BG, fg=BTN_FG, command=self._show_main_menu)
         back_btn.pack(side=tk.LEFT, padx=5)
 
