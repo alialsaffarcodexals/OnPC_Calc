@@ -1,16 +1,18 @@
 # OnPC_Calc
 
-OnPcCalc lets you track how long you spend on the computer each day.  It comes
-with a dark themed interface, larger fonts and an easy way to start or stop the
-timer.
+OnPcCalc lets you track how long you spend on the computer or in specific
+programs. It features a dark themed interface, larger fonts and simple
+controls for starting and stopping timers.
 
 ## Features
 
 - Start and stop overall PC usage tracking.
+- Track a program by entering its process name.
+- A real-time timer is shown while tracking.
 - Times are shown in `HH:MM:SS` format.
-- View tracked data for any day using a drop down menu.
+- View tracked data for any day in a table.
 - Save displayed data using the **Print Track** button which writes to
-  `PC-Track-YYYY-MM-DD.txt` rather than printing to the terminal.
+  `PC-Track-YYYY-MM-DD.txt`.
 - Dark themed interface with a larger window and improved layout.
 
 ## Usage
@@ -22,9 +24,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-Use the **Track PC** button to start or stop counting how long your computer was
-used for the day. When you start or stop tracking you will see a success
-message.
-
-From the **Show Data** window you can press **Print Track** to save the
-displayed totals to a text file.
+Use **Track PC** to measure total PC time or **Track Program** to monitor a
+single application by name. A live timer shows progress while tracking. From
+the **Show Data** view you can review totals for any day and press
+**Print Track** to save the table to a text file.
