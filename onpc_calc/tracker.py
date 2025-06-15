@@ -1,11 +1,8 @@
-"""Process usage tracker."""
+"""Simple timers for PC and app tracking."""
 
-import os
 import threading
 import time
 from datetime import datetime
-
-import psutil
 
 
 class PcTracker:
@@ -39,29 +36,18 @@ class PcTracker:
 
 
 class ProgramTracker:
-    """Track usage of a program by its name."""
+    """Manual timer for a specific app name."""
 
     def __init__(self, name: str) -> None:
-        self.name = os.path.basename(name)
+        self.name = name
         self.running = False
         self.seconds = 0
         self.thread: threading.Thread | None = None
         self.date = datetime.now().date().isoformat()
 
-    def _is_running(self) -> bool:
-        """Return True if a process with matching name is running."""
-        for proc in psutil.process_iter(["name"]):
-            try:
-                if proc.info.get("name") and proc.info["name"].lower() == self.name.lower():
-                    return True
-            except (psutil.Error, OSError):
-                continue
-        return False
-
     def _run(self) -> None:
         while self.running:
-            if self._is_running():
-                self.seconds += 1
+            self.seconds += 1
             time.sleep(1)
 
     def start(self) -> None:
