@@ -1,4 +1,4 @@
-"""Database utilities for OnPC_Calc."""
+"""Database utilities for App Tracker."""
 
 import sqlite3
 from pathlib import Path
