@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, messagebox
 
 from .database import Database
 from .tracker import PcTracker, ProgramTracker
@@ -153,18 +153,10 @@ class GUI:
         header = tk.Label(frame, text="App Tracker", font=FONT, bg=BG, fg=FG)
         header.pack(pady=10)
 
-        path_var = tk.StringVar()
-        entry = tk.Entry(frame, textvariable=path_var, font=FONT, width=50)
+        name_var = tk.StringVar()
+        entry = tk.Entry(frame, textvariable=name_var, font=FONT, width=50)
         entry.pack(pady=10)
-        entry.insert(0, "app path")
-
-        def browse() -> None:
-            path = filedialog.askopenfilename()
-            if path:
-                path_var.set(path)
-
-        browse_btn = tk.Button(frame, text="Browse", font=FONT, bg=BTN_BG, fg=BTN_FG, command=browse)
-        browse_btn.pack(pady=5)
+        entry.insert(0, "program name")
 
         label = tk.Label(frame, textvariable=self.timer_var, font=FONT, bg=BG, fg=FG)
         label.pack(pady=10)
@@ -174,22 +166,22 @@ class GUI:
 
         def toggle() -> None:
             nonlocal start_btn
-            path = path_var.get().strip()
-            if not path:
-                messagebox.showerror("Error", "App path required")
+            name = name_var.get().strip()
+            if not name:
+                messagebox.showerror("Error", "Program name required")
                 return
             if self.prog_tracker and self.prog_tracker.running:
                 secs = self.prog_tracker.stop()
-                self.db.add_program_usage(path, self.prog_tracker.date, secs)
-                messagebox.showinfo("Saved", f"{os.path.basename(path)} time saved")
+                self.db.add_program_usage(name, self.prog_tracker.date, secs)
+                messagebox.showinfo("Saved", f"{name} time saved")
                 self.prog_tracker = None
                 start_btn.config(text="Start")
             else:
-                self.prog_tracker = ProgramTracker(path)
+                self.prog_tracker = ProgramTracker(name)
                 self.timer_var.set("00:00:00")
                 self.prog_tracker.start()
                 self._update_timer()
-                messagebox.showinfo("Started", f"{os.path.basename(path)} tracker started!")
+                messagebox.showinfo("Started", f"{name} tracker started!")
                 start_btn.config(text="Stop")
 
         start_btn.config(command=toggle)

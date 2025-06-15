@@ -39,21 +39,20 @@ class PcTracker:
 
 
 class ProgramTracker:
-    """Tracks usage of a specific program given its executable path."""
+    """Track usage of a program by its name."""
 
-    def __init__(self, path: str) -> None:
-        self.path = os.path.abspath(path)
+    def __init__(self, name: str) -> None:
+        self.name = os.path.basename(name)
         self.running = False
         self.seconds = 0
         self.thread: threading.Thread | None = None
         self.date = datetime.now().date().isoformat()
 
     def _is_running(self) -> bool:
-        """Return True if a process with matching executable path is running."""
-        for proc in psutil.process_iter(["exe"]):
+        """Return True if a process with matching name is running."""
+        for proc in psutil.process_iter(["name"]):
             try:
-                exe = proc.info.get("exe")
-                if exe and os.path.abspath(exe) == self.path:
+                if proc.info.get("name") and proc.info["name"].lower() == self.name.lower():
                     return True
             except (psutil.Error, OSError):
                 continue
