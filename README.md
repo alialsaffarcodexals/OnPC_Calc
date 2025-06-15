@@ -7,9 +7,10 @@ timer.
 ## Features
 
 - Start and stop overall PC usage tracking.
-- Times are shown in `HH:MM` format.
+- Times are shown in `HH:MM:SS` format.
 - View tracked data for any day using a drop down menu.
-- Print the displayed data.
+- Save displayed data using the **Print Track** button which writes to
+  `PC-Track-YYYY-MM-DD.txt` rather than printing to the terminal.
 - Dark themed interface with a larger window and improved layout.
 
 ## Usage
@@ -22,4 +23,8 @@ python main.py
 ```
 
 Use the **Track PC** button to start or stop counting how long your computer was
-used for the day.
+used for the day. When you start or stop tracking you will see a success
+message.
+
+From the **Show Data** window you can press **Print Track** to save the
+displayed totals to a text file.

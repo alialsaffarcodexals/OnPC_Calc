@@ -16,10 +16,11 @@ BTN_FG = "#ffffff"
 
 
 def format_time(seconds: int) -> str:
-    """Return HH:MM string for given seconds."""
+    """Return HH:MM:SS string for given seconds."""
     hours = seconds // 3600
     minutes = (seconds % 3600) // 60
-    return f"{hours:02d}:{minutes:02d}"
+    secs = seconds % 60
+    return f"{hours:02d}:{minutes:02d}:{secs:02d}"
 
 class GUI:
     def __init__(self) -> None:
@@ -65,9 +66,12 @@ class GUI:
             self.db.add_pc_usage(self.pc_tracker.date, seconds)
             messagebox.showinfo("Saved", "PC time saved.")
             self.pc_tracker = None
+        elif self.pc_tracker and not self.pc_tracker.running:
+            messagebox.showerror("Error", "Tracking already stopped.")
         else:
             self.pc_tracker = PcTracker()
             self.pc_tracker.start()
+            messagebox.showinfo("Started", "PC tracking started!")
 
     def _show_data(self) -> None:
         window = tk.Toplevel(self.root)
@@ -87,7 +91,17 @@ class GUI:
             text.insert(tk.END, f"PC Total: {format_time(pc_total)}\n")
 
         def print_data() -> None:
-            print(text.get("1.0", tk.END))
+            date = date_var.get()
+            if not date:
+                messagebox.showerror("Error", "No date selected")
+                return
+            filename = f"PC-Track-{date}.txt"
+            try:
+                with open(filename, "w", encoding="utf-8") as f:
+                    f.write(text.get("1.0", tk.END))
+                messagebox.showinfo("Saved", f"Data saved to {filename}")
+            except OSError as exc:
+                messagebox.showerror("Error", str(exc))
 
         btn_frame = tk.Frame(window, bg=BG)
         btn_frame.pack(pady=10)
